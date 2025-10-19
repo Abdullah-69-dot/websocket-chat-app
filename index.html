@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Push Chat (Python WebSocket)</title>
+<style>
+:root {
+  --blue: #2563eb;
+  --light: #f1f5f9;
+  --white: #ffffff;
+  --gray: #d1d5db;
+  --text: #1f2937;
+}
+body {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background: linear-gradient(135deg, #93c5fd, #bfdbfe);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+.chat-container {
+  width: 420px;
+  height: 580px;
+  background: var(--white);
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.header {
+  background: var(--blue);
+  color: var(--white);
+  padding: 12px 16px;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.messages {
+  flex: 1;
+  padding: 10px 12px;
+  background: var(--light);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.message {
+  max-width: 75%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  position: relative;
+  line-height: 1.4;
+  font-size: 14px;
+  animation: fadeIn 0.2s ease-in;
+}
+.message.you {
+  align-self: flex-end;
+  background: var(--blue);
+  color: white;
+  border-bottom-right-radius: 2px;
+}
+.message.other {
+  align-self: flex-start;
+  background: var(--white);
+  border: 1px solid var(--gray);
+  border-bottom-left-radius: 2px;
+}
+.name {
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.input-box {
+  display: flex;
+  border-top: 1px solid #ccc;
+}
+input {
+  flex: 1;
+  border: none;
+  padding: 10px;
+  font-size: 14px;
+  outline: none;
+}
+button {
+  background: var(--blue);
+  border: none;
+  color: white;
+  padding: 0 16px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+button:hover {
+  background: #1e3a8a;
+}
+.username-box {
+  display: flex;
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+.username-box input {
+  flex: 1;
+  border: none;
+  background: var(--light);
+  padding: 8px 10px;
+  border-radius: 8px;
+  outline: none;
+}
+@keyframes fadeIn {
+  from {opacity: 0; transform: translateY(5px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+</style>
+</head>
+<body>
+<div class="chat-container">
+  <div class="header">💬 Push Chat (Python WebSocket)</div>
+
+  <div class="username-box">
+    <input type="text" id="name" placeholder="Enter your name..." />
+  </div>
+
+  <div class="messages" id="messages"></div>
+
+  <div class="input-box">
+    <input type="text" id="message" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+let ws = new WebSocket("ws://localhost:8080");
+let myName = "";
+const box = document.getElementById("messages");
+
+ws.onopen = () => {
+  console.log("Connected ");
+};
+
+ws.onmessage = (event) => {
+  const msg = JSON.parse(event.data);
+  const div = document.createElement("div");
+  const currentName = document.getElementById("name").value.trim();
+  const isMine = msg.name === currentName;
+  div.className = "message " + (isMine ? "you" : "other");
+  div.innerHTML = `
+    <div class="name">${msg.name}</div>
+    <div>${msg.text}</div>
+  `;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+};
+
+function sendMessage() {
+  const name = document.getElementById("name").value.trim();
+  const text = document.getElementById("message").value.trim();
+  if (!name || !text) return;
+  ws.send(JSON.stringify({ name, text }));
+  document.getElementById("message").value = "";
+}
+
+document.getElementById("message").addEventListener("keypress", e => {
+  if (e.key === "Enter") sendMessage();
+});
+</script>
+</body>
+</html>
